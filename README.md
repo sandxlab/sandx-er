@@ -174,7 +174,7 @@ sandx_er/
 | Abt-Buy | E-commerce | 1,081 | 1,092 | ~1,097 |
 | DBLP-ACM | Academic | 2,616 | 2,294 | 2,224 |
 | DBLP-Scholar | Academic | 2,616 | 64,263 | 5,347 |
-| Cora | Citations | 1,295 | — | dedup |
+| Cora | Citations | 1,879 | — | dedup |
 
 All benchmark runs are version-tagged and fully reproducible from public data.
 
