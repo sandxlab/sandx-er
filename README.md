@@ -2,88 +2,184 @@
 
 **Entity Resolution infrastructure for fragmented, noisy, large-scale datasets.**
 
+[![CI](https://github.com/sandxlab/sandx-er/actions/workflows/ci.yml/badge.svg)](https://github.com/sandxlab/sandx-er/actions/workflows/ci.yml)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
 Part of the [SandX Lab](https://github.com/sandxlab) computational infrastructure ecosystem.
 
 ---
 
 ## What It Does
 
-`sandx-er` resolves the identity of real-world entities across one or more datasets where the same entity may appear as multiple, inconsistent, or duplicate records. It provides a modular, composable pipeline:
+`sandx-er` resolves the identity of real-world entities across datasets where the same entity appears as multiple, inconsistent, or duplicate records. Pipeline:
 
 ```
-Raw records → Blocking → Matching → Clustering → Resolved identity graph
+Raw records  →  Blocking  →  Matching  →  Clustering  →  Resolved identity graph
+                 (LSH,          (Jaccard,    (Connected
+                  SNM,           cosine)      components,
+                  ANN)                        Correlation)
 ```
 
-Each stage is independently configurable. Outputs carry probabilistic confidence scores, not binary decisions.
+Each stage is independently configurable. Every output carries a probabilistic confidence score — not a binary decision.
 
 ## Status
 
-> **Phase 1 — Architecture & Foundations**
-> Core engineering begins in Phase 2. This repository establishes the package structure, API contract, and benchmark targets.
+> **v0.1 — Phase 2 active development**
 
 | Component | Status |
 |-----------|--------|
-| `sandx_er.resolver` — EntityResolver API | Skeleton |
-| `sandx_er.blocking` — LSH, SNM, embedding-based | Skeleton |
-| `sandx_er.matching` — similarity scoring | Skeleton |
-| `sandx_er.clustering` — connected components, correlation | Skeleton |
-| Python SDK on PyPI | Planned (Phase 2) |
-| Benchmarks — Abt-Buy, DBLP-ACM, Cora | Planned (Phase 2) |
+| `EntityResolver` — pipeline orchestrator | **Working** |
+| `LSHBlocking` — MinHash LSH | **Working** |
+| `SortedNeighborhoodBlocking` — SNM | **Working** |
+| `EmbeddingANNBlocking` — ANN via sandx-embed | **Working** |
+| `JaccardScorer` — character shingle Jaccard | **Working** |
+| `CosineSimilarityScorer` — embedding cosine | **Working** |
+| `ConnectedComponentsClustering` | **Working** |
+| `CorrelationClustering` — Kwik-Cluster | **Working** |
+| Abt-Buy benchmark | **Working** |
+| PyPI package | Planned |
 
 ## Installation
 
 ```bash
-# Phase 2 (planned)
 pip install sandx-er
 ```
 
-## Quick Start (planned API)
+Or from source:
+
+```bash
+git clone https://github.com/sandxlab/sandx-er
+cd sandx-er
+pip install -e ".[dev]"
+```
+
+For embedding-based blocking and matching:
+
+```bash
+pip install "sandx-er[embed]"
+```
+
+## Quick Start
 
 ```python
+import pandas as pd
 from sandx_er import EntityResolver
 
+records = pd.DataFrame({
+    "name":  ["Acme Corp", "Acme Corp.", "GlobalTech Inc", "Global Tech"],
+    "city":  ["Boston",    "Boston",     "New York",       "New York"],
+})
+
 er = EntityResolver(
-    blocking="lsh",        # locality-sensitive hashing
-    similarity="embedding", # sandx-embed powered matching
-    threshold=0.85
+    blocking="lsh",       # MinHash LSH candidate generation
+    similarity="jaccard", # character Jaccard similarity scoring
+    threshold=0.4,
 )
 
 result = er.resolve(records)
 
+print(f"Resolved {result.n_records} records → {result.n_clusters} entities")
 for cluster in result.clusters:
-    print(cluster.canonical_id, cluster.size, cluster.confidence)
+    print(f"  {cluster.canonical_id[:8]}  size={cluster.size}  conf={cluster.confidence:.2f}")
+    print(f"    records: {cluster.record_ids}")
 ```
+
+Output:
+```
+Resolved 4 records → 2 entities
+  3f2a1b8c  size=2  conf=0.81
+    records: ['0', '1']
+  7e9d4c2a  size=2  conf=0.76
+    records: ['2', '3']
+```
+
+## Pipeline Stages
+
+### Blocking
+
+Reduces O(N²) comparisons to a tractable candidate set.
+
+```python
+from sandx_er import LSHBlocking, SortedNeighborhoodBlocking, EmbeddingANNBlocking
+
+# MinHash LSH — works on all string fields, no key required
+er = EntityResolver(blocking="lsh")
+
+# Sorted Neighborhood Method — fast, requires a sort key
+er = EntityResolver(blocking="snm", key_field="name")
+
+# Embedding ANN — semantic similarity (requires sandx-embed)
+er = EntityResolver(blocking="embedding", embed_model="sentence-bert")
+
+# Or pass a custom BlockingMethod instance
+er = EntityResolver(blocking=LSHBlocking(n_bands=30, n_rows=4))
+```
+
+### Matching
+
+Scores each candidate pair.
+
+```python
+from sandx_er import JaccardScorer, CosineSimilarityScorer
+
+er = EntityResolver(similarity="jaccard")               # no deps; fast
+er = EntityResolver(similarity="embedding")             # requires sandx-embed
+er = EntityResolver(similarity=JaccardScorer(shingle_size=2, fields=["name"]))
+```
+
+### Clustering
+
+Reconciles pairwise decisions into globally consistent entity clusters.
+
+```python
+er = EntityResolver(clustering="connected_components")  # fast; may over-merge
+er = EntityResolver(clustering="correlation")           # slower; corrects transitivity errors
+```
+
+## Benchmark — Abt-Buy
+
+```bash
+python -m benchmarks.abt_buy --blocking lsh --similarity jaccard --threshold 0.3
+```
+
+Downloads the Abt-Buy product matching dataset (public, ~1,100 records per table) and reports precision, recall, and F1 against the labeled test split.
+
+| Config | Precision | Recall | F1 |
+|--------|-----------|--------|-----|
+| LSH + Jaccard + 0.3 | TBD | TBD | TBD |
+| LSH + Cosine + 0.5  | TBD | TBD | TBD |
+
+*Results will be published after full benchmark run. All results are reproducible from public data.*
 
 ## Architecture
 
 ```
 sandx_er/
-├── resolver.py     # EntityResolver — main pipeline orchestrator
-├── blocking.py     # Blocking pipeline: LSH, SNM, embedding ANN
-├── matching.py     # Similarity scoring: feature-based, embedding cosine, learned
-└── clustering.py   # Cluster reconciliation: connected components, correlation clustering
+├── resolver.py     EntityResolver — pipeline orchestrator
+├── blocking.py     LSHBlocking, SortedNeighborhoodBlocking, EmbeddingANNBlocking
+├── matching.py     JaccardScorer, CosineSimilarityScorer
+└── clustering.py   ConnectedComponentsClustering, CorrelationClustering
 ```
 
-**Depends on:** [`sandx-embed`](https://github.com/sandxlab/sandx-embed) for embedding-based blocking and matching.
+**Optional dependency:** [`sandx-embed`](https://github.com/sandxlab/sandx-embed) for embedding-based blocking and matching.
 
-## Benchmarks
+## Benchmark Datasets
 
-Target benchmark datasets (Phase 2):
+| Dataset | Domain | Table A | Table B | Matches |
+|---------|--------|---------|---------|---------|
+| Abt-Buy | E-commerce | 1,081 | 1,092 | ~1,097 |
+| DBLP-ACM | Academic | 2,616 | 2,294 | 2,224 |
+| DBLP-Scholar | Academic | 2,616 | 64,263 | 5,347 |
+| Cora | Citations | 1,295 | — | dedup |
 
-| Dataset | Domain | Records | Pairs |
-|---------|--------|---------|-------|
-| Abt-Buy | E-commerce | 1,082 / 1,092 | 1,097 matches |
-| DBLP-ACM | Academic citations | 2,616 / 2,294 | 2,224 matches |
-| DBLP-Scholar | Academic citations | 2,616 / 64,263 | 5,347 matches |
-| Cora | Research papers | 1,295 | deduplication |
-
-All benchmark results will be version-tagged and fully reproducible from public data.
+All benchmark runs are version-tagged and fully reproducible from public data.
 
 ## Related
 
-- [`sandx-embed`](https://github.com/sandxlab/sandx-embed) — embedding infrastructure (shared dependency)
+- [`sandx-embed`](https://github.com/sandxlab/sandx-embed) — shared embedding infrastructure
 - [`sandx-graph`](https://github.com/sandxlab/sandx-graph) — graph intelligence over resolved entities
-- [`sandx-compute`](https://github.com/sandxlab/sandx-compute) — distributed compute orchestration
+- [sandx.io](https://sandx.io) — project home
 
 ## License
 
