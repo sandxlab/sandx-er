@@ -39,6 +39,7 @@ Each stage is independently configurable. Every output carries a probabilistic c
 | `CorrelationClustering` — Kwik-Cluster | **Working** |
 | Febrl4 benchmark | **Working** |
 | DBLP-ACM benchmark | **Working** |
+| Fodors-Zagats benchmark | **Working** |
 | PyPI package | **Working** |
 
 ## Installation
@@ -175,6 +176,25 @@ Data: Magellan ER benchmark collection (Köpcke & Rahm, 2010).
 
 SNM with title blocking outperforms LSH on this academic dataset: paper titles are stable identifiers across DBLP and ACM, so sorted-neighborhood retrieval finds almost all true matches without generating as many false candidates.
 
+## Benchmark — Fodors-Zagats
+
+```bash
+python -m benchmarks.restaurant --data-path /path/to/restaurant.csv
+python -m benchmarks.restaurant --data-path /path/to/restaurant.csv --blocking snm --key-field name
+```
+
+Restaurant record linkage across Fodors and Zagats listings.
+533 Fodors records · 331 Zagats records · 110 ground-truth matching pairs.
+Data: Magellan ER benchmark collection (Köpcke & Rahm, 2010).
+
+| Config | Precision | Recall | F1 | Time |
+|--------|-----------|--------|-----|------|
+| LSH + Jaccard · threshold=0.5 | 0.807 | 0.645 | 0.717 | 0.1s |
+| SNM (name) + Jaccard · threshold=0.3 | 0.810 | **0.891** | **0.848** | 0.0s |
+| SNM (name) + Jaccard · threshold=0.5 | **1.000** | 0.745 | 0.854 | 0.0s |
+
+Restaurant names are a stable-enough identifier despite variations ("art's deli" vs "art's delicatessen"), so SNM on `name` recovers most true matches at low threshold. Setting threshold=0.5 eliminates all false positives (perfect precision) at the cost of recall.
+
 ## Full Pipeline Demo
 
 Run the end-to-end demo (sandx-er + sandx-graph):
@@ -223,7 +243,7 @@ sandx_er/
 
 | Dataset | Domain | Table A | Table B | Matches |
 |---------|--------|---------|---------|---------|
-| Abt-Buy | E-commerce | 1,081 | 1,092 | ~1,097 |
+| Fodors-Zagats | Restaurants | 533 | 331 | 110 |
 | DBLP-ACM | Academic | 2,616 | 2,294 | 2,224 |
 | DBLP-Scholar | Academic | 2,616 | 64,263 | 5,347 |
 | Cora | Citations | 1,879 | — | dedup |
