@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from sandx_er.clustering import ConnectedComponentsClustering, CorrelationClustering
 

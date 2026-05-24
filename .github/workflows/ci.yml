@@ -54,4 +54,7 @@ jobs:
       - name: Install package
         run: pip install -e ".[dev]"
       - name: Verify benchmark imports
-        run: python -c "from benchmarks.abt_buy import evaluate; print('benchmark imports OK')"
+        run: |
+          python -c "from benchmarks.febrl4 import evaluate; print('febrl4 OK')"
+          python -c "from benchmarks.dblp_acm import evaluate; print('dblp_acm OK')"
+          python -c "from benchmarks.restaurant import evaluate; print('restaurant OK')"
