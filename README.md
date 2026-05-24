@@ -37,8 +37,9 @@ Each stage is independently configurable. Every output carries a probabilistic c
 | `CosineSimilarityScorer` — embedding cosine | **Working** |
 | `ConnectedComponentsClustering` | **Working** |
 | `CorrelationClustering` — Kwik-Cluster | **Working** |
-| Abt-Buy benchmark | **Working** |
-| PyPI package | Planned |
+| Febrl4 benchmark | **Working** |
+| DBLP-ACM benchmark | **Working** |
+| PyPI package | **Working** |
 
 ## Installation
 
@@ -140,8 +141,8 @@ er = EntityResolver(clustering="correlation")           # slower; corrects trans
 ## Benchmark — Febrl4
 
 ```bash
-python -m benchmarks.abt_buy                                    # LSH + Jaccard, threshold 0.3
-python -m benchmarks.abt_buy --blocking snm --key-field surname # SNM + Jaccard
+python -m benchmarks.febrl4                                    # LSH + Jaccard, threshold 0.3
+python -m benchmarks.febrl4 --blocking snm --key-field surname # SNM + Jaccard
 ```
 
 Uses the Febrl4 person record linkage dataset (built into `recordlinkage` — no download required).
@@ -153,7 +154,26 @@ Uses the Febrl4 person record linkage dataset (built into `recordlinkage` — no
 | SNM (surname) + Jaccard · threshold=0.3 | 1.000 | 0.384 | 0.555 | 0.4s |
 
 LSH generalizes across all field variations; SNM recall drops when the blocking key (surname) is noisy.
-All results are reproducible: `pip install recordlinkage && python -m benchmarks.abt_buy`.
+All results are reproducible: `pip install recordlinkage && python -m benchmarks.febrl4`.
+
+## Benchmark — DBLP-ACM
+
+```bash
+python -m benchmarks.dblp_acm --data-path /path/to/dblp_acm.csv
+python -m benchmarks.dblp_acm --data-path /path/to/dblp_acm.csv --blocking snm --key-field title
+```
+
+Academic publication record linkage across DBLP and ACM databases.
+2,616 DBLP records · 2,294 ACM records · 2,220 ground-truth matching pairs.
+Data: Magellan ER benchmark collection (Köpcke & Rahm, 2010).
+
+| Config | Precision | Recall | F1 | Time |
+|--------|-----------|--------|-----|------|
+| LSH + Jaccard · threshold=0.5 | 0.697 | 0.925 | 0.795 | 0.9s |
+| LSH + Jaccard · threshold=0.7 | 0.900 | 0.653 | 0.757 | 1.1s |
+| SNM (title) + Jaccard · threshold=0.5 | **0.899** | **0.957** | **0.927** | 0.3s |
+
+SNM with title blocking outperforms LSH on this academic dataset: paper titles are stable identifiers across DBLP and ACM, so sorted-neighborhood retrieval finds almost all true matches without generating as many false candidates.
 
 ## Architecture
 
