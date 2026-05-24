@@ -19,8 +19,7 @@ import pandas as pd
 from sandx_er import EntityResolver
 
 try:
-    from sandx_graph import ConsensusEngine
-    from sandx_graph.builder import KnowledgeGraph
+    from sandx_graph import ConsensusEngine, GraphBuilder
 except ImportError as exc:
     raise ImportError(
         "This demo requires sandx-graph.\n"
@@ -147,30 +146,20 @@ def run() -> None:
     print("  nodes : one per resolved entity")
     print("  edges : sector relationship weights (knowledge base)\n")
 
-    nodes: dict[str, dict] = {
-        c.canonical_id: {
-            "name": display_names[c.canonical_id],
-            "record_ids": c.record_ids,
-            "confidence": c.confidence,
-            "size": c.size,
-        }
-        for c in merged
-    }
-
-    # Map company key -> canonical_id for edge construction
     key_to_cid = {v: k for k, v in company_keys.items()}
+    rel_edges = [
+        (key_to_cid[s], key_to_cid[t], w)
+        for s, t, w in RELATIONS
+        if key_to_cid.get(s) and key_to_cid.get(t)
+    ]
 
-    edges: list[tuple[str, str, float]] = []
-    for src_key, tgt_key, weight in RELATIONS:
-        src_cid = key_to_cid.get(src_key)
-        tgt_cid = key_to_cid.get(tgt_key)
-        if src_cid and tgt_cid:
-            edges.append((src_cid, tgt_cid, weight))
-
-    graph = KnowledgeGraph(nodes=nodes, edges=edges)
+    graph = GraphBuilder().from_resolution(result, edges=rel_edges)
+    for cid, name in display_names.items():
+        if cid in graph.nodes:
+            graph.nodes[cid]["name"] = name
     print(f"  {graph}\n")
     print("  Edges:")
-    for src, tgt, w in sorted(edges, key=lambda e: e[2], reverse=True):
+    for src, tgt, w in sorted(rel_edges, key=lambda e: e[2], reverse=True):
         src_n = display_names.get(src, src[:8])
         tgt_n = display_names.get(tgt, tgt[:8])
         bar = "#" * int(w * 30)
