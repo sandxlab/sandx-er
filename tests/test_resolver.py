@@ -137,10 +137,8 @@ class TestBlocking:
             er.resolve(records)
 
     def test_unknown_blocking_raises(self):
-        records = _product_records()
-        er = EntityResolver(blocking="invalid")
         with pytest.raises(ValueError, match="Unknown blocking"):
-            er.resolve(records)
+            EntityResolver(blocking="invalid")
 
 
 # ---------------------------------------------------------------------------
@@ -161,10 +159,8 @@ class TestClustering:
         assert result.n_records == len(records)
 
     def test_unknown_clustering_raises(self):
-        records = _product_records()
-        er = EntityResolver(clustering="bad_method")
         with pytest.raises(ValueError, match="Unknown clustering"):
-            er.resolve(records)
+            EntityResolver(clustering="bad_method")
 
 
 # ---------------------------------------------------------------------------

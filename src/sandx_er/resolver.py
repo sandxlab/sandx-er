@@ -87,6 +87,26 @@ class EntityResolver:
         key_field: str | None = None,
         embed_model: str = "sentence-bert",
     ) -> None:
+        _VALID_BLOCKING = {"lsh", "snm", "embedding"}
+        _VALID_SIMILARITY = {"jaccard", "embedding"}
+        _VALID_CLUSTERING = {"connected_components", "correlation"}
+
+        if isinstance(blocking, str) and blocking not in _VALID_BLOCKING:
+            raise ValueError(
+                f"Unknown blocking method: {blocking!r}. "
+                f"Choose one of {sorted(_VALID_BLOCKING)} or pass a BlockingMethod instance."
+            )
+        if isinstance(similarity, str) and similarity not in _VALID_SIMILARITY:
+            raise ValueError(
+                f"Unknown similarity method: {similarity!r}. "
+                f"Choose one of {sorted(_VALID_SIMILARITY)} or pass a SimilarityScorer instance."
+            )
+        if isinstance(clustering, str) and clustering not in _VALID_CLUSTERING:
+            raise ValueError(
+                f"Unknown clustering method: {clustering!r}. "
+                f"Choose one of {sorted(_VALID_CLUSTERING)} or pass a ClusteringMethod instance."
+            )
+
         self.blocking = blocking
         self.similarity = similarity
         self.clustering = clustering
