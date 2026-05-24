@@ -175,6 +175,38 @@ Data: Magellan ER benchmark collection (Köpcke & Rahm, 2010).
 
 SNM with title blocking outperforms LSH on this academic dataset: paper titles are stable identifiers across DBLP and ACM, so sorted-neighborhood retrieval finds almost all true matches without generating as many false candidates.
 
+## Full Pipeline Demo
+
+Run the end-to-end demo (sandx-er + sandx-graph):
+
+```bash
+pip install sandx-er sandx-graph
+python -m examples.full_pipeline
+```
+
+Resolves 15 noisy company records into 5 entities, builds a knowledge graph, and computes consensus scores:
+
+```
+Resolved 15 records -> 5 entities  [2ms]
+
+  Apple Inc               conf=0.59  size=3
+  Microsoft Corp          conf=0.58  size=3
+  Google LLC              conf=0.57  size=3
+  Amazon Inc.             conf=0.62  size=3
+  Meta Platforms          conf=0.67  size=3
+
+KnowledgeGraph(n_nodes=5, n_edges=5)
+
+  Apple Inc    -- Microsoft Corp   0.82  ########################
+  Apple Inc    -- Google LLC       0.78  #######################
+  Google LLC   -- Amazon Inc.      0.75  ######################
+
+  Google LLC   score=0.737  support=3  conflict=0
+  Apple Inc    score=0.800  support=2  conflict=0
+```
+
+See [`examples/full_pipeline.py`](examples/full_pipeline.py) for the full source.
+
 ## Architecture
 
 ```
