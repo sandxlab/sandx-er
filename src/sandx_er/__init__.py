@@ -5,7 +5,7 @@ from sandx_er.clustering import ConnectedComponentsClustering, CorrelationCluste
 from sandx_er.matching import CosineSimilarityScorer, JaccardScorer
 from sandx_er.resolver import EntityCluster, EntityResolver, ResolutionResult
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __all__ = [
     "EntityResolver",
     "EntityCluster",
