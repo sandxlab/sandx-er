@@ -195,6 +195,69 @@ Data: Magellan ER benchmark collection (Köpcke & Rahm, 2010).
 
 Restaurant names are a stable-enough identifier despite variations ("art's deli" vs "art's delicatessen"), so SNM on `name` recovers most true matches at low threshold. Setting threshold=0.5 eliminates all false positives (perfect precision) at the cost of recall.
 
+## Raw to Clean Demo
+
+The most common use case: you have a raw DataFrame with duplicate, inconsistent vendor/customer/patient records. You want clean, deduplicated entities.
+
+```bash
+pip install sandx-er
+python -m examples.raw_to_clean
+```
+
+24 vendor records, 6 underlying companies, 7 noise types (punctuation, abbreviations, suffix variation, hyphenation, case differences, word-boundary splits, address shorthand):
+
+```
+==============================================================
+ SandX Entity Resolution  --  Raw to Clean
+==============================================================
+ 24 raw records  .  6 underlying vendors  .  real-world name/address noise
+
+ RAW INPUT
+ --------------------------------------------------------------
+ v01    Meridian Health Solutions               Boston, MA
+ v02    Meridian Health Solutions Inc.          Boston MA
+ v03    Meridian Health Soln. LLC               Boston
+ v04    Meridian Health Solution                Boston, MA
+ v05    BioCore Analytics Inc.                  San Diego, CA
+ v06    Bio-Core Analytics                      San Diego CA
+ ...
+
+ RESOLVED ENTITIES
+ --------------------------------------------------------------
+ ENTITY                               CONF  SIZE  RECORDS
+ Meridian Health Solution             0.69     4  [v03  v04  v02  v01]
+ Biocore Analytics                    0.67     4  [v08  v05  v07  v06]
+ DataVault Sys.                       0.58     4  [v09  v11  v12  v10]
+ Cloudpeak Infra.                     0.61     4  [v16  v13  v15  v14]
+ Nexus Financial Group                0.71     2  [v17  v19]
+ Vertex Res. Labs                     0.61     4  [v24  v22  v23  v21]
+
+ Unresolved singletons: 2
+
+==============================================================
+ 24 raw records  ->  6 resolved entities  [5 ms]
+==============================================================
+```
+
+The 2 singletons ("Nexus Financial Grp." and "Nexus Fin. Group") are too heavily abbreviated for character Jaccard at threshold 0.30. Switching to embedding-based matching resolves them:
+
+```python
+er = EntityResolver(blocking="embedding", similarity="embedding", threshold=0.85)
+```
+
+Three lines of code drove the entire resolution:
+
+```python
+from sandx_er import EntityResolver
+
+er     = EntityResolver(blocking="lsh", similarity="jaccard", threshold=0.30)
+result = er.resolve(df)        # df: pandas DataFrame of raw records
+for c in result.clusters:
+    print(c.canonical_id[:8], c.size, c.confidence)
+```
+
+See [`examples/raw_to_clean.py`](examples/raw_to_clean.py) for the full source with annotated noise types.
+
 ## Full Pipeline Demo
 
 Run the end-to-end demo (sandx-er + sandx-graph):
