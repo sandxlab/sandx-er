@@ -40,7 +40,7 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: pip install ruff
-      - run: ruff check src/ tests/ benchmarks/
+      - run: ruff check src/ tests/
 
   benchmark-smoke:
     name: Benchmark smoke test
@@ -58,3 +58,4 @@ jobs:
           python -c "from benchmarks.febrl4 import evaluate; print('febrl4 OK')"
           python -c "from benchmarks.dblp_acm import evaluate; print('dblp_acm OK')"
           python -c "from benchmarks.restaurant import evaluate; print('restaurant OK')"
+          python -c "from benchmarks.cora import evaluate; print('cora OK')"

@@ -195,6 +195,26 @@ Data: Magellan ER benchmark collection (Köpcke & Rahm, 2010).
 
 Restaurant names are a stable-enough identifier despite variations ("art's deli" vs "art's delicatessen"), so SNM on `name` recovers most true matches at low threshold. Setting threshold=0.5 eliminates all false positives (perfect precision) at the cost of recall.
 
+## Benchmark — Cora
+
+```bash
+python -m benchmarks.cora --data-path /path/to/cora.csv
+python -m benchmarks.cora --data-path /path/to/cora.csv --blocking snm --key-field title
+```
+
+Citation deduplication — single-table, no tableA/tableB split. Each record is a citation; ground truth clusters records that cite the same paper.
+1,879 citation records · ~900 unique papers · evaluation is pair-based F1.
+Data: Magellan ER benchmark collection / DeepMatcher benchmarks.
+
+Expected CSV columns: `id` (or `rec_id`), `author`, `title`, `venue`, `year`, `cluster_id`.
+
+| Config | Precision | Recall | F1 | Time |
+|--------|-----------|--------|-----|------|
+| LSH + Jaccard · threshold=0.5 | — | — | — | — |
+| SNM (title) + Jaccard · threshold=0.5 | — | — | — | — |
+
+*Results pending — run with your local copy of the dataset to populate.*
+
 ## Raw to Clean Demo
 
 The most common use case: you have a raw DataFrame with duplicate, inconsistent vendor/customer/patient records. You want clean, deduplicated entities.
