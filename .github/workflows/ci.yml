@@ -59,3 +59,4 @@ jobs:
           python -c "from benchmarks.dblp_acm import evaluate; print('dblp_acm OK')"
           python -c "from benchmarks.restaurant import evaluate; print('restaurant OK')"
           python -c "from benchmarks.cora import evaluate; print('cora OK')"
+          python -c "from benchmarks.dblp_scholar import evaluate; print('dblp_scholar OK')"

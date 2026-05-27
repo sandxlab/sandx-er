@@ -215,6 +215,26 @@ Expected CSV columns: `id` (or `rec_id`), `author`, `title`, `venue`, `year`, `c
 
 *Results pending — run with your local copy of the dataset to populate.*
 
+## Benchmark — DBLP-Scholar
+
+```bash
+python -m benchmarks.dblp_scholar --data-path /path/to/dblp_scholar.csv
+python -m benchmarks.dblp_scholar --data-path /path/to/dblp_scholar.csv --blocking snm --key-field title
+```
+
+Large-scale publication record linkage. Scholar's 64K records make this a blocking stress test — the blocking stage must reduce ~168M candidate pairs to a tractable set without missing true matches.
+2,616 DBLP records · 64,263 Scholar records · 5,347 ground-truth matching pairs.
+Data: Magellan ER benchmark collection / DeepMatcher benchmarks.
+
+Expected CSV columns: `id`, `title`, `authors`, `venue`, `year`, `source`, `cluster_id` (id values prefixed `A_` for DBLP, `B_` for Scholar).
+
+| Config | Precision | Recall | F1 | Time |
+|--------|-----------|--------|-----|------|
+| LSH + Jaccard · threshold=0.5 | — | — | — | — |
+| SNM (title) + Jaccard · threshold=0.5 | — | — | — | — |
+
+*Results pending — run with your local copy of the dataset to populate.*
+
 ## Raw to Clean Demo
 
 The most common use case: you have a raw DataFrame with duplicate, inconsistent vendor/customer/patient records. You want clean, deduplicated entities.
